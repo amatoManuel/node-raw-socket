@@ -282,6 +282,7 @@ void SocketWrap::Init (Napi::Env env, Napi::Object exports) {
 			InstanceMethod<&SocketWrap::Recv>("recv"),
 			InstanceMethod<&SocketWrap::Send>("send"),
 			InstanceMethod<&SocketWrap::SetOption>("setOption")
+			InstanceMethod<&SocketWrap::BindSocket>("bindSocket")
 	});
 	SocketWrap_constructor = Napi::Persistent(tpl);
 	SocketWrap_constructor.SuppressDestruct();
@@ -567,7 +568,8 @@ Napi::Value SocketWrap::Recv(const Napi::CallbackInfo& info) {
 	socklen_t sin_length = socket->family_ == AF_INET6
 			? sizeof (sin6_address)
 			: sizeof (sin_address);
-#endif
+#endif
+
 	
 	if (info.Length () < 2) {
 		Napi::Error::New(env, "Five arguments are required").ThrowAsJavaScriptException();
@@ -803,6 +805,31 @@ Napi::Value SocketWrap::SetOption(const Napi::CallbackInfo& info) {
 		return env.Undefined();
 	}
 	
+	return info.This();
+}
+
+Napi::Value SocketWrap::BindSocket(const Napi::CallbackInfo& info) {
+	Napi::Env env = info.Env();
+	Napi::HandleScope scope(env);
+	
+	SocketWrap* socket = this;
+
+	if (info.Length () == 0) {
+		Napi::TypeError::New(env, "One argument required").ThrowAsJavaScriptException();
+		return env.Undefined();
+	}
+
+	if (! info[0]->IsString ()) {
+		Napi::TypeError::New(env, "Address argument must be a string").ThrowAsJavaScriptException();
+		return env.Undefined();
+	}
+	const char* ipaddress = info[0].ToString().Utf8Value().c_str();
+
+	sockaddr_in localaddr = {0};
+	localaddr.sin_family = AF_UNSPEC;
+	localaddr.sin_addr.s_addr = inet_addr(ipaddress);
+	bind(socket->poll_fd_, (sockaddr*)&localaddr, sizeof(localaddr));
+
 	return info.This();
 }
 

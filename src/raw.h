@@ -85,6 +85,7 @@ private:
 	Napi::Value Recv(const Napi::CallbackInfo& info);
 	Napi::Value Send(const Napi::CallbackInfo& info);
 	Napi::Value SetOption(const Napi::CallbackInfo& info);
+	Napi::Value BindSocket(const Napi::CallbackInfo& info);
 
 	Napi::Value handle();
 
